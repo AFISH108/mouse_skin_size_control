@@ -37,7 +37,7 @@ def measure_track_timeseries_from_segmentations(name,pathdict,metadata):
     
     '''
     
-    print('Loading segmentaion...')
+    print('Loading segmentation...')
     manual_segs = io.imread(pathdict['Segmentation'])
     
     frame_averages = pd.read_csv(pathdict['Frame averages'],index_col=0)

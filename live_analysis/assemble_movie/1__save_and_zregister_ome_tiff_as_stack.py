@@ -16,7 +16,8 @@ from tqdm import tqdm
 
 # dirname = '/Users/xies/OneDrive - Stanford/Skin/06-25-2022/M1 WT/R1'
 # dirname = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/03-26-2023 RB-KO pair/M6 WT/R2'
-dirname = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/05-04-2023 RBKO p107het pair/F8 RBKO p107 het/R2'
+# dirname = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/05-04-2023 RBKO p107het pair/F8 RBKO p107 het/R2'
+dirname = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/07-23-2023 R26CreER Rb-fl no tam ablation/'
 
 OVERWRITE = False
 
@@ -27,7 +28,7 @@ def sort_by_slice(filename):
     z = findall('_(\d+).ome.tif',filename)[0]
     return int(z)
 
-subfolders = glob(path.join(dirname,'*. Day*/ZSeries*/'))
+subfolders = glob(path.join(dirname,'R*/*.*/ZSeries*/'))
 
 header_ome_h2b = []
 header_ome_fucci = []
@@ -97,7 +98,7 @@ for header_ome in tqdm(header_ome_fucci):
     # Use StackReg
     print(f'Registering {d}')
     sr = StackReg(StackReg.TRANSLATION) # There should only be slight sliding motion within a single stack
-    T = sr.register_stack(R,reference='previous',axis=0) #Obtain the transformation matrices
+    T = sr.register_stack(R_shg,reference='previous',axis=0) #Obtain the transformation matrices
     R_reg = sr.transform_stack(R,tmats=T) # Apply to both channels
     R_shg_reg = sr.transform_stack(R_shg,tmats=T) # Apply to both channels
     
