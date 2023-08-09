@@ -11,9 +11,7 @@ import pandas as pd
 
 from skimage import io
 from tqdm import tqdm
-
-from twophotonUtils import smooth_growth_curve
-
+from scipy.interpolate import UnivariateSpline
 
 import warnings
 with warnings.catch_warnings():
@@ -105,7 +103,10 @@ def measure_track_timeseries_from_segmentations(name,pathdict,metadata):
             
             track = pd.concat(track)
             track['CellID'] = trackID
-            track['Age'] = (track['Frame'] - track.iloc[0]['Frame'])*12
+            if 'Time stamps' in metadata.keys():
+                track['Age'] = metadata['Time stamps'][track['Frame'].values.astype(int)]
+            else:
+                track['Age'] = (track['Frame'] - track.iloc[0]['Frame'])*12
             track['Region'] = name
             track['Genotype'] = genotype
             track['Mouse'] = mouse
@@ -127,18 +128,26 @@ def measure_track_timeseries_from_segmentations(name,pathdict,metadata):
         for f in skipped_frames:
             
             missing_frame = f+1
-            track = track.append(pd.Series({'Frame':missing_frame,'X':np.nan,'Y':np.nan,'Z':np.nan,'Volume':np.nan
+            track = pd.concat([track,pd.Series({'Frame':missing_frame,'X':np.nan,'Y':np.nan,'Z':np.nan,'Volume':np.nan
                                  ,'CellID' : track.iloc[0].CellID, 'Age': (missing_frame - track.iloc[0]['Frame']) * 12
                                  ,'Region':name,'Genotype':genotype
-                                 }),ignore_index=True)
+                                 })],ignore_index=True)
             track = track.sort_values('Frame').reset_index(drop=True)
     
-    print('Smoothing...')
+    print('Smoothing and calculating growth rates...')
     
     for i,track in enumerate(tracks):
         
-        track['Volume interp'] = smooth_growth_curve(track,y='Volume')
-        track['Volume normal interp'] = smooth_growth_curve(track,y='Volume normal')
+        track['Volume interp'],spl = smooth_growth_curve(track,y='Volume')
+        track['Volume normal interp'],spl_norm = smooth_growth_curve(track,y='Volume normal')
+
+        if not spl == None:
+        
+            track['Growth rate'] = spl.derivative(1)(track['Age'])
+            track['Growth rate normal'] = spl_norm.derivative(1)(track['Age'])
+        
+        # track['Growth rate back'] = np.diff(track['Volume'])
+        # track['Growth rate interp'] = track['Spline interp'].iloc[0].derivateve(1)(track['Age'])
 
         tracks[i] = track
 
@@ -200,6 +209,7 @@ def collate_timeseries_into_cell_centric_table(tracks,metadata):
     genotype = metadata['Genotype']
     dirname = metadata['Dirname']
     mode = metadata['Mode']
+    time = metadata['Time stamps']
     
     print(f'Generating cell table for {name}')
     
@@ -224,12 +234,12 @@ def collate_timeseries_into_cell_centric_table(tracks,metadata):
         
         # Birth
         birth_frame = track.iloc[0]['Birth frame']
-        if not np.isnan(birth_frame):
-
-            birth_size = track[track['Frame'] == birth_frame]['Volume'].values[0]
-            birth_size_normal = track[track['Frame'] == birth_frame]['Volume normal'].values[0]
-            birth_size_interp = track[track['Frame'] == birth_frame]['Volume interp'].values[0]
-            birth_size_normal_interp = track[track['Frame'] == birth_frame]['Volume normal interp'].values[0]
+        if (not np.isnan(birth_frame)) and (birth_frame in track['Frame'].values):
+                
+                birth_size = track[track['Frame'] == birth_frame]['Volume'].values[0]
+                birth_size_normal = track[track['Frame'] == birth_frame]['Volume normal'].values[0]
+                birth_size_interp = track[track['Frame'] == birth_frame]['Volume interp'].values[0]
+                birth_size_normal_interp = track[track['Frame'] == birth_frame]['Volume normal interp'].values[0]
             
         else:
             birth_frame = np.nan
@@ -239,32 +249,40 @@ def collate_timeseries_into_cell_centric_table(tracks,metadata):
         
         # it's possible that the div/s frame isn't in the segmentation frame
         # because that frame has bad quality -> fill in with NA
-        if not div_frame in track['Frame']:
-            track = track.append(pd.Series({'Frame':div_frame,'X':np.nan,'Y':np.nan,'Z':np.nan
+        
+        if (not np.isnan(div_frame)) and (not div_frame in track['Frame']):
+            age = time[int(div_frame)] - track.iloc[0]['Age']
+            track = pd.concat([track,pd.DataFrame({'Frame':div_frame,'X':np.nan,'Y':np.nan,'Z':np.nan
                                             ,'Volume':np.nan
                                             ,'Volume thresh':np.nan
                                             # ,'Volume normal':np.nan
-                                 ,'CellID' : track.iloc[0].CellID, 'Age': (div_frame - track.iloc[0]['Frame']) * 12
-                                 }),ignore_index=True)
+                                            ,'CellID' : track.iloc[0].CellID,
+                                            'Age': age},index=[int(div_frame)]
+                                               )],ignore_index=True)
             track = track.sort_values('Frame').reset_index(drop=True)
             
-        if not s_frame in track['Frame']:
-            track = track.append(pd.Series({'Frame':s_frame,'X':np.nan,'Y':np.nan,'Z':np.nan
+        if (not np.isnan(s_frame)) and (not s_frame in track['Frame']):
+            s_age = time[int(s_frame)] - track.iloc[0]['Age']
+            track = pd.concat([track,pd.DataFrame({'Frame':s_frame,'X':np.nan,'Y':np.nan,'Z':np.nan
                                             ,'Volume':np.nan
                                             ,'Volume thresh':np.nan
                                             #, 'Volume normal':np.nan
-                                 ,'CellID' : track.iloc[0].CellID, 'Age': (s_frame - track.iloc[0]['Frame']) * 12
-                                 }),ignore_index=True)
+                                            ,'CellID' : track.iloc[0].CellID,
+                                            'Age': s_age}
+                                                ,index=[int(s_frame)])
+                                         ],ignore_index=True)
         
         # Division
         if not np.isnan(div_frame):
+            # print(div_frame)
+            # print(track['CellID'])
             div_size = track[track['Frame'] == div_frame]['Volume'].values[0]
             div_size_normal = track[track['Frame'] == div_frame]['Volume normal'].values[0]
             div_size_interp = track[track['Frame'] == div_frame]['Volume interp'].values[0]
             div_size_normal_interp = track[track['Frame'] == div_frame]['Volume normal interp'].values[0]
             total_length = track[track['Frame'] == div_frame]['Age'].values[0]
         else:
-            div_frame = np.nan
+            div_size = np.nan
         
         # Delete mitotic volumes
         if track.iloc[0].Mitosis:
@@ -355,6 +373,29 @@ def recalibrate_pixel_size(tracks,cell_table,new_dx):
     return tracks,cell_table
     
     
+    
+def smooth_growth_curve(cf,x='Age',y='Volume',smoothing_factor=1e10):
+
+    X = cf[x]
+    Y = cf[y]
+    
+    I = (~np.isnan(X)) * (~np.isnan(Y))
+        
+    # Won't smooth 3 pts or fewer (cubic spline)
+    if len(X[I]) < 4:
+        Yhat = cf[y].values
+        spl = None
+        
+    else:
+
+        # Spline smooth
+        spl = UnivariateSpline(X[I], Y[I], k=3, s=smoothing_factor)
+        Yhat = spl(X)
+        
+    return Yhat, spl
+    
+
+
     
     
     

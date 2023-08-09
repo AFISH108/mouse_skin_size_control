@@ -78,7 +78,7 @@ def construct_data_frame_dense(_tracks,_links,_spots):
         
         link = _links[i]
         spots_ = _spots[i]
-            
+        
         spots = pd.DataFrame()
         # Construct a cleaned-up dataframe
         spots['LABEL'] = spots_['LABEL']
@@ -92,7 +92,7 @@ def construct_data_frame_dense(_tracks,_links,_spots):
         spots['Right'] = None
         spots['Division'] = False
         spots['Terminus'] = False
-        
+        spots = spots.sort_values('Frame')
         
         # For each spot, figure out how many incoming links + outgoing links (i.e. mother/daughters)
         for idx,spot in spots.iterrows():
@@ -126,7 +126,7 @@ def construct_data_frame_dense(_tracks,_links,_spots):
         
             # Pop from list
             spot = spots2trace.pop()
-            #print(f'Tracing from {spot.ID}')
+            print(f'Tracing from {spot.ID.values}')
             track = [spot]
             while not spot.iloc[0]['Division'] and not spot.iloc[0]['Terminus']:
                 # Trace the linkages
@@ -207,7 +207,7 @@ def construct_data_frame_complete_cycles(cycling_tracks,cycling_links, cycling_s
         
             # Pop from list
             spot = spots2trace.pop()
-            #print(f'Tracing from {spot.ID}')
+            print(f'Tracing from {spot.ID}')
             track = [spot]
             while not spot.iloc[0]['Division'] and not spot.iloc[0]['Terminus']:
                 # Trace the linkages

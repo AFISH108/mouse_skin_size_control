@@ -18,13 +18,12 @@ from twophotonUtils import parse_unreigstered_channels
 # dirname = '/Users/xies/OneDrive - Stanford/Skin/06-25-2022/M1 WT/R1'
 # dirname = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/03-26-2023 RB-KO pair/M6 WT/R2'
 
-dirname = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/07-23-2023 R26CreER Rb-fl no tam ablation/R2/'
+dirname = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/07-31-2023 R26CreER Rb-fl no tam ablation 8hr/F1 Black/R1'
 
-filelist = parse_unreigstered_channels(dirname,folder_str='*.*')
+filelist = parse_unreigstered_channels(dirname,folder_str='*.*/')
 
-#%% Manually set the Z-slice (in R/R_shg)
-
-manual_targetZ = {0:54,1:60,2:55,3:61,4:63,5:41,6:48}
+# Manually set the Z-slice (in R/R_shg)
+manual_targetZ = {}
 
 #%%
 
@@ -32,7 +31,7 @@ XX = 1024
 
 OVERWRITE = True
 
-for t in tqdm([6]):
+for t in tqdm(range(5)):
     
     output_dir = path.split(path.dirname(filelist.loc[t,'R']))[0]
     if path.exists(path.join(path.dirname(filelist.loc[t,'R']),'R_reg_reg.tif'))  and not OVERWRITE:
@@ -50,6 +49,7 @@ for t in tqdm([6]):
     
     # Find the slice with maximum mean value in R_shg channel
     Imax = R_shg.mean(axis=2).mean(axis=1).argmax()
+    print(f'R_shg max std at {Imax}')
     R_ref = R_shg[Imax,...]
     R_ref = filters.gaussian(R_ref,sigma=0.5)
     
@@ -75,15 +75,15 @@ for t in tqdm([6]):
     sr = StackReg(StackReg.RIGID_BODY)
     T = sr.register(target/target.max(),R_ref) #Obtain the transformation matrices   
     T = transform.SimilarityTransform(T)
-    
-    T = transform.SimilarityTransform(translation=[-15,-5],rotation=np.deg2rad(0))
+    # 
+    T = transform.SimilarityTransform(translation=[10,15],rotation=np.deg2rad(0))
     
     R_transformed = np.zeros_like(R).astype(float)
     R_shg_transformed = np.zeros_like(R).astype(float)
     for i, R_slice in enumerate(R):
         R_transformed[i,...] = transform.warp(R_slice,T)
         R_shg_transformed[i,...] = transform.warp(R_shg[i,...],T)
-
+    
     print('Padding')
     # Z-pad the red + red_shg channel using Imax and Iz
     bottom_padding = Iz - Imax

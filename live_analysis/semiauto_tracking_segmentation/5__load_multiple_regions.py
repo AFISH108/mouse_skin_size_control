@@ -28,12 +28,12 @@ dirnames['WT_R2'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/09-29-2
 dirnames['WT_R3'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/03-26-2023 RB-KO pair/M6 WT/R1'
 dirnames['WT_R4'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/03-26-2023 RB-KO pair/M6 WT/R2'
 
-# dirnames['RBKO_R1'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/09-29-2022 RB-KO pair/RBKO/R1'
-# dirnames['RBKO_R2'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/09-29-2022 RB-KO pair/RBKO/R2'
-# dirnames['RBKO_R3'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/03-26-2023 RB-KO pair/M1 RBKO/R1'
-# dirnames['RBKO_R4'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/03-26-2023 RB-KO pair/M1 RBKO/R2'
+dirnames['RBKO_R1'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/09-29-2022 RB-KO pair/RBKO/R1'
+dirnames['RBKO_R2'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/09-29-2022 RB-KO pair/RBKO/R2'
+dirnames['RBKO_R3'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/03-26-2023 RB-KO pair/M1 RBKO/R1'
+dirnames['RBKO_R4'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/03-26-2023 RB-KO pair/M1 RBKO/R2'
 
-dirnames['RBKO_p107het_R2'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/05-04-2023 RBKO p107het pair/F8 RBKO p107 het/R2'
+dirnames['RBKOp107het_R2'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/05-04-2023 RBKO p107het pair/F8 RBKO p107 het/R2'
 
 #%%
 
@@ -72,20 +72,34 @@ df_manual = df_all[df_all['Mode'] == 'manual']
 
 wt = df_all[df_all['Genotype'] == 'WT']
 wt_curated = wt[wt['Mode'] == 'curated']
-wt_manual = wt[wt['Mode'] == 'manual']
+# wt_manual = wt[wt['Mode'] == 'manual']
 rbko = df_all[df_all['Genotype'] == 'RBKO']
 rbko_curated = rbko[rbko['Mode'] == 'curated']
-rbko_manual = rbko[rbko['Mode'] == 'manual']
+
+rbkop107het = df_all[df_all['Genotype'] == 'RBKOp107het']
+# rbko_manual = rbko[rbko['Mode'] == 'manual']
 
 #%%
 
-sb.lmplot(df_all,x='Birth size normal',y='Total growth normal',col='Mode',row='Pair',hue='Genotype')
-# plt.ylim([0,2])
+sb.lmplot(df_all,x='Birth size normal',y='G1 growth normal',col='Mode',row='Pair',hue='Genotype')
+plt.ylim([-0.25,1.5])
 
 #%%
 
-sb.lmplot(df,x='Birth size normal',y='Total length',col='Genotype',
-          robust=False,hue='Pair')
+sb.lmplot(df_all,x='Birth size normal',y='Total length',row='Pair',
+          robust=False,hue='Genotype')
+
+#%%
+
+g = sb.FacetGrid(df_all, hue="Genotype", col ='Pair')
+g.map(sb.histplot,'G1 length')
+plt.legend()
+
+#%%
+
+sb.catplot(df_all,x='Pair',y='S phase entry size normal',hue='Genotype',kind='violin')
+
+sb.catplot(df_all,x='Pair',y='Birth size normal',hue='Genotype',kind='violin')
 
 #%%
 

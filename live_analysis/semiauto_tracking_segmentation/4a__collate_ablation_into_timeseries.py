@@ -22,40 +22,38 @@ import warnings
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-
 dirnames = {}
-# dirnames['WT_R1'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/09-29-2022 RB-KO pair/WT/R1'
-# dirnames['WT_R2'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/09-29-2022 RB-KO pair/WT/R2'
-# dirnames['WT_R3'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/03-26-2023 RB-KO pair/M6 WT/R1'
-# dirnames['WT_R4'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/03-26-2023 RB-KO pair/M6 WT/R2'
+# dirnames['Ablation_R1'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/07-23-2023 R26CreER Rb-fl no tam ablation/R1/'
+# dirnames['Ablation_R3'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/07-26-2023 R25CreER Rb-fl no tam ablation 12h/Black female/R1'
+dirnames['Ablation_R4'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/07-26-2023 R25CreER Rb-fl no tam ablation 12h/Black female/R2'
+# dirnames['Nonablation_R1'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/07-23-2023 R26CreER Rb-fl no tam ablation/R1/'
+# dirnames['Nonablation_R3'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/07-26-2023 R25CreER Rb-fl no tam ablation 12h/Black female/R1'
+dirnames['Nonablation_R4'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/07-26-2023 R25CreER Rb-fl no tam ablation 12h/Black female/R2'
 
-# dirnames['RBKO_R1'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/09-29-2022 RB-KO pair/RBKO/R1'
-# dirnames['RBKO_R2'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/09-29-2022 RB-KO pair/RBKO/R2'
-# dirnames['RBKO_R3'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/03-26-2023 RB-KO pair/M1 RBKO/R1'
-# dirnames['RBKO_R4'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/03-26-2023 RB-KO pair/M1 RBKO/R2'
-
-dirnames['RBKOp107het_R2'] = '/Users/xies/OneDrive - Stanford/Skin/Two photon/NMS/05-04-2023 RBKO p107het pair/F8 RBKO p107 het/R2'
 
 dx = {}
-dx['WT_R1'] = 0.206814922817744/1.5
-dx['WT_R2'] = 0.206814922817744/1.5
-dx['WT_R3'] = 0.165243202683616
-dx['WT_R4'] = 0.165243202683616
-dx['RBKO_R1'] = 0.206814922817744/1.5
-dx['RBKO_R2'] = 0.206814922817744/1.5
-dx['RBKO_R3'] = 0.165243202683616
-dx['RBKO_R4'] = 0.165243202683616
-dx['RBKOp107het_R2'] = 0.165243202683616
+dx['Ablation_R1'] = 0.14599609375/1.5
+dx['Nonablation_R1'] = 0.14599609375/1.5
+dx['Ablation_R3'] = 0.194661458333333/1.5
+dx['Nonablation_R3'] = 0.194661458333333/1.5
+dx['Ablation_R4'] = 0.194661458333333/1.5
+dx['Nonablation_R4'] = 0.194661458333333/1.5
 
+mouse = {'Ablation_R1':'WT_F1','Nonablation_R1':'WT_F1','Ablation_R3':'WT_F1','Nonablation_R3':'WT_F1'
+         ,'Ablation_R4':'WT_F1','Nonablation_R4':'WT_F1'}
+subdir_str = {'Ablation_R1':'ablation','Nonablation_R1':'nonablation','Ablation_R3':'ablation',
+              'Nonablation_R3':'nonablation','Ablation_R4':'ablation','Nonablation_R4':'nonablation'}
 
-mouse = {'WT_R1':'WT_M1','WT_R2':'WT_M1','RBKO_R1':'RBKO_M2','RBKO_R2':'RBKO_M2'
-         ,'WT_R3':'WT_M3','WT_R4':'WT_M3','RBKO_R3':'RBKO_M4','RBKO_R4':'RBKO_M4'
-         ,'RBKOp107het_R2':'RBKOp107het_M1'}
-
-pairs = {'WT_M1':'Pair 1','RBKO_M2':'Pair 1','WT_M3':'Pair 2','RBKO_M4':'Pair 2','RBKOp107het_M1':'Pair 3'}
-
+pairs = {'WT_F1':np.nan}
 
 RECALCULATE = True
+
+timestamps = {'Ablation_R1':np.array([0,2,4,7,11,23,36])
+              ,'Nonablation_R1':np.array([0,2,4,7,11,23,36])
+              ,'Ablation_R3':np.array([0,12,16,20,24,36])
+              ,'Nonablation_R3':np.array([0,12,16,20,24,36])
+              ,'Ablation_R4':np.array([0,12,16,20,24,36])
+              ,'Nonablation_R4':np.array([0,12,16,20,24,36])}
 
 #%% Load and collate manual track+segmentations
 # Dictionary of manual segmentation (there should be no first or last time point)
@@ -72,7 +70,7 @@ for name,dirname in dirnames.items():
         
         # Construct pathnames
         pathdict = {}
-        pathdict['Segmentation'] = path.join(dirname,f'manual_tracking/{mode}_clahe.tif')
+        pathdict['Segmentation'] = path.join(dirname,'manual_tracking',subdir_str[name],f'{mode}_clahe.tif')
         pathdict['H2B'] = path.join(dirname,'master_stack/G.tif')
         pathdict['FUCCI'] = path.join(dirname,'master_stack/R.tif')
         pathdict['Frame averages'] = path.join(dirname,'high_fucci_avg_size.csv')
@@ -87,7 +85,7 @@ for name,dirname in dirnames.items():
         metadata['Genotype'] = genotype
         metadata['Mode'] = mode
         metadata['Dirname'] = dirname
-        
+        metadata['Time stamps'] = timestamps[name]
         
         #% Re-construct tracks with manually fixed tracking/segmentation
         # if RECALCULATE:
@@ -95,7 +93,7 @@ for name,dirname in dirnames.items():
         tracks = cell_cycle_annotate(tracks,pathdict,metadata)
         
         # Save to the manual tracking folder
-        with open(path.join(dirname,'manual_tracking',f'{name}_complete_cycles_fixed_{mode}.pkl'),'wb') as file:
+        with open(path.join(dirname,'manual_tracking',f'{name}_dense_{mode}.pkl'),'wb') as file:
             pkl.dump(tracks,file)
             
         # Construct the cell-centric metadata dataframe
@@ -103,7 +101,7 @@ for name,dirname in dirnames.items():
         
         df.to_csv(path.join(dirname,f'manual_tracking/{name}_dataframe_{mode}.csv'))
         # Save to the manual tracking folder    
-        with open(path.join(dirname,'manual_tracking',f'{name}_complete_cycles_fixed_{mode}.pkl'),'wb') as file:
+        with open(path.join(dirname,'manual_tracking',f'{name}_dense_{mode}.pkl'),'wb') as file:
             pkl.dump(tracks,file)
 
 
